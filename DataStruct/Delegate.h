@@ -1,4 +1,4 @@
-template<typename R, typename A1, typename A2, class C>
+template<typename R, typename A1, typename A2>
 class Delegate
 {
 public:
@@ -7,53 +7,48 @@ public:
 		m_p = NULL;
 		m_F = NULL;
 	}
-	~Delegate() {}
+	~Delegate()
+	{
+	}
 public:
-	typedef R(*F)(A1, A2);
-	typedef R(C::*CF)(A1, A2);
-	typedef R(*FNew)(void *p, A1, A2);
-	void *m_p;
+	typedef R(*FNew)(void * p, A1, A2);
+	void * m_p;
 	FNew m_F;
-
-	template<CF cf>
-	static int MethodStub(void *p, A1 a1, A2 a2)
+	template<class C, R(C::*CF)(A1, A2)>
+	static int MethodStub(void * p, A1 a1, A2 a2)
 	{
-		A * Ap = (A *)p;
-		return (Ap->*cf)(a1, a2);
+		C * Ap = (C *)p;
+		return (Ap->*CF)(a1, a2);
 	}
-
-	template<F f>
-	static int FunStub(void *p, A1 a1, A2 a2)
+	template<R(*F)(A1, A2)>
+	static int FunStub(void * p, A1 a1, A2 a2)
 	{
-		return(f)(a1, a2);
+		return (F)(a1, a2);
 	}
-
-	static Delegate Create(void*p, FNew f)
+	static Delegate Create(void* p, FNew f)
 	{
 		Delegate Temp;
-		Temp.m_F =f;
-		Temp.m_p =p;
+		Temp.m_F = f;
+		Temp.m_p = p;
 		return Temp;
 	}
 public:
-	template<CF cf>
-	static Delegate FromMethod(C *p)
+	template<class C, R(C::*CF)(A1, A2)>
+	static Delegate FromMethod(C * p)
 	{
-		return Create(p, &MethodStub<cf>);
+		return Create(p, &MethodStub<C, CF>);
 	}
-	template<F f>
-	static Delegate FromFun() 
+
+	template<R(*F)(A1, A2)>
+	static Delegate FromFun()
 	{
-		return Create(NULL, &FunStub<f>);
+		return Create(NULL, &FunStub<F>);
 	}
 	int Excute(int a1, int a2)
 	{
 		return (*m_F)(m_p, a1, a2);
 	}
 };
-
-
-
 
 class DelegateTestClass
 {
@@ -114,7 +109,7 @@ cout << (&dc->*cppf)(1, 5) << "\n***\n";
 template<CPPFunction cf>
 static int CPPMethodStub(void* objPtr, int a, int b)
 {
-	DelegateClass* dc = (DelegateClass*)objPtr;
+	DelegateTestClass* dc = (DelegateTestClass*)objPtr;
 	return (dc->*cf)(a, b);
 }
 /*
