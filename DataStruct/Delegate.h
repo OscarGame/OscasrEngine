@@ -1,3 +1,60 @@
+template<typename R, typename A1, typename A2, class C>
+class Delegate
+{
+public:
+	Delegate()
+	{
+		m_p = NULL;
+		m_F = NULL;
+	}
+	~Delegate() {}
+public:
+	typedef R(*F)(A1, A2);
+	typedef R(C::*CF)(A1, A2);
+	typedef R(*FNew)(void *p, A1, A2);
+	void *m_p;
+	FNew m_F;
+
+	template<CF cf>
+	static int MethodStub(void *p, A1 a1, A2 a2)
+	{
+		A * Ap = (A *)p;
+		return (Ap->*cf)(a1, a2);
+	}
+
+	template<F f>
+	static int FunStub(void *p, A1 a1, A2 a2)
+	{
+		return(f)(a1, a2);
+	}
+
+	static Delegate Create(void*p, FNew f)
+	{
+		Delegate Temp;
+		Temp.m_F =f;
+		Temp.m_p =p;
+		return Temp;
+	}
+public:
+	template<CF cf>
+	static Delegate FromMethod(C *p)
+	{
+		return Create(p, &MethodStub<cf>);
+	}
+	template<F f>
+	static Delegate FromFun() 
+	{
+		return Create(NULL, &FunStub<f>);
+	}
+	int Excute(int a1, int a2)
+	{
+		return (*m_F)(m_p, a1, a2);
+	}
+};
+
+
+
+
 class DelegateTestClass
 {
 public:
